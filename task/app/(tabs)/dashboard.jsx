@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { Alert, Button, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function Dashboard() {
+  const router = useRouter();
   const [siteName, setSiteName] = useState('');
   const [clientName, setClientName] = useState('');
   const [description, setDescription] = useState('');
@@ -49,6 +51,8 @@ export default function Dashboard() {
       <Text style={styles.title}>Quick Actions</Text>
       <View style={styles.actions}>
         <Button title="Create Survey" onPress={() => setShowForm(true)} />
+        <View style={styles.buttonSpace} />
+        <Button title="Open Camera" onPress={() => router.push('/camera')} />
         <View style={styles.buttonSpace} />
         <Button title="View Recent Surveys" onPress={() => Alert.alert('Recent Surveys', `${surveys.length} survey(s) created.`)} />
       </View>
