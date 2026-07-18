@@ -1,6 +1,7 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Button, Image, StyleSheet, Text, View } from 'react-native';
+import * as MediaLibrary from "expo-media-library";
 
 export default function CameraScreen() {
   const cameraRef = useRef(null);
@@ -9,12 +10,33 @@ export default function CameraScreen() {
   const [captureTime, setCaptureTime] = useState('');
   const [openingCamera, setOpeningCamera] = useState(true);
 
-  const capturePhoto = async () => {
-    if (!cameraRef.current) return;
+ const capturePhoto = async () => {
+  if (!cameraRef.current) return;
 
-    const photo = await cameraRef.current.takePictureAsync();
-    setPhotoUri(photo.uri);
-    setCaptureTime(new Date().toLocaleString());
+  const photo = await cameraRef.current.takePictureAsync();
+
+  // Ask for gallery permission
+  const granted = await requestMediaLibraryPermission();
+  if (!granted) return;
+
+  // Save photo to gallery
+  await MediaLibrary.saveToLibraryAsync(photo.uri);
+
+  Alert.alert("Success", "Photo saved to gallery!");
+
+  setPhotoUri(photo.uri);
+  setCaptureTime(new Date().toLocaleString());
+};
+
+  const requestMediaLibraryPermission = async () => {
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert("Permission Required");
+      return false;
+    }
+
+    return true;
   };
 
   const deletePhoto = () => {
