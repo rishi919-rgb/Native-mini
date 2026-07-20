@@ -402,7 +402,7 @@ export default function NewSurvey() {
         <Text style={[styles.label, { color: themeColors.text }]}>Evidence Photo</Text>
         {attachedPhoto ? (
           <View style={styles.attachmentBox}>
-            <Image source={{ uri: attachedPhoto }} style={styles.attachedImage} />
+            <Image source={{ uri: attachedPhoto }} style={styles.attachedImage} resizeMode="cover" />
             <TouchableOpacity
               style={styles.retakeBtn}
               onPress={() => router.push('/camera')}
@@ -524,7 +524,6 @@ const styles = StyleSheet.create({
   attachedImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   retakeBtn: {
     position: 'absolute',

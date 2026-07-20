@@ -215,7 +215,7 @@ export default function HistoryScreen() {
               <View style={styles.cardRow}>
                 {/* Visual Thumbnail */}
                 {item.photo ? (
-                  <Image source={{ uri: item.photo }} style={styles.thumbnail} />
+                  <Image source={{ uri: item.photo }} style={styles.thumbnail} resizeMode="cover" />
                 ) : (
                   <View style={[styles.thumbnailPlaceholder, { backgroundColor: themeColors.background }]}>
                     <IconSymbol name="camera.fill" size={16} color={themeColors.textMuted} />
@@ -362,7 +362,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 10,
-    resizeMode: 'cover',
   },
   thumbnailPlaceholder: {
     width: 70,

@@ -167,7 +167,7 @@ export default function PreviewScreen() {
           {photo ? (
             <View style={styles.imageSection}>
               <Text style={[styles.ticketLabel, { color: themeColors.textMuted, marginHorizontal: 20, marginBottom: 8 }]}>EVIDENCE PHOTO</Text>
-              <Image source={{ uri: photo }} style={styles.attachedImage} />
+              <Image source={{ uri: photo }} style={styles.attachedImage} resizeMode="cover" />
             </View>
           ) : (
             <View style={[styles.noImageSection, { backgroundColor: themeColors.background, borderColor: themeColors.border }]}>
@@ -340,7 +340,6 @@ const styles = StyleSheet.create({
   attachedImage: {
     width: '100%',
     height: 220,
-    resizeMode: 'cover',
   },
   noImageSection: {
     height: 120,

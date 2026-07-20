@@ -116,7 +116,7 @@ export default function CameraScreen() {
       {photoUri ? (
         // Preview Workspace
         <View style={styles.previewContainer}>
-          <Image source={{ uri: photoUri }} style={styles.previewImage} />
+          <Image source={{ uri: photoUri }} style={styles.previewImage} resizeMode="contain" />
           <View style={styles.previewFooter}>
             <View style={styles.metadataRow}>
               <IconSymbol name="calendar" size={16} color="#94a3b8" />
@@ -292,7 +292,6 @@ const styles = StyleSheet.create({
   },
   previewImage: {
     flex: 1,
-    resizeMode: 'contain',
   },
   previewFooter: {
     paddingHorizontal: 20,
