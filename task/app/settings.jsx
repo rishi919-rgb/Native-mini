@@ -1,10 +1,11 @@
 import React from 'react';
-import { Alert, StyleSheet, Text, View, TouchableOpacity, useColorScheme, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, useColorScheme, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { getSurveys, saveSurveys, STORAGE_KEY } from '../utils/storage';
+import { confirmAction, showAlert } from '../utils/alert';
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -12,21 +13,25 @@ export default function SettingsScreen() {
 
   const clearDatabase = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    Alert.alert(
-      'Wipe Database',
+    confirmAction(
+      'Wipe Local Database',
       'Are you sure you want to delete all stored survey inspections? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Wipe All',
-          style: 'destructive',
-          onPress: async () => {
-            await AsyncStorage.removeItem(STORAGE_KEY);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert('Database Cleared', 'All local inspection reports have been erased.');
-          },
-        },
-      ]
+      async () => {
+        try {
+          await AsyncStorage.removeItem(STORAGE_KEY);
+          await AsyncStorage.removeItem('@draft_survey');
+          await AsyncStorage.removeItem('@last_photo');
+          await AsyncStorage.removeItem('@editing_survey_id');
+          await AsyncStorage.removeItem('@edit_survey');
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          showAlert('Database Cleared', 'All local inspection reports have been erased.');
+        } catch (e) {
+          console.warn(e);
+          showAlert('Error', 'Unable to reset database storage.');
+        }
+      },
+      'Wipe All',
+      'destructive'
     );
   };
 
@@ -76,10 +81,10 @@ export default function SettingsScreen() {
       const existing = await getSurveys();
       await saveSurveys([...mockData, ...existing]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Mock Data Injected', 'Injected 3 realistic field inspection records. View them in the History tab!');
+      showAlert('Mock Data Injected', 'Injected 3 realistic field inspection records. View them in the History tab!');
     } catch (e) {
       console.warn(e);
-      Alert.alert('Error', 'Unable to inject mock data.');
+      showAlert('Error', 'Unable to inject mock data.');
     }
   };
 

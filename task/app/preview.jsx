@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, View, TouchableOpacity, useColorScheme } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View, TouchableOpacity, useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { getSurveys, saveSurveys, DRAFT_KEY, LAST_PHOTO, EDIT_SURVEY_ID_KEY, EDIT_SURVEY_KEY } from '../utils/storage';
+import { showAlert } from '../utils/alert';
 
 export default function PreviewScreen() {
   const router = useRouter();
@@ -50,7 +51,7 @@ export default function PreviewScreen() {
       
       const success = await saveSurveys(updatedList);
       if (!success) {
-        Alert.alert('Storage Warning', 'Report saved, but storage space is low.');
+        showAlert('Storage Warning', 'Report saved, but storage space is low.');
       }
       
       // Clear caches
@@ -60,11 +61,11 @@ export default function PreviewScreen() {
       await AsyncStorage.removeItem(EDIT_SURVEY_KEY);
       
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Survey Logged', editId ? 'Survey updated successfully.' : 'Survey report was saved to history database successfully!');
+      showAlert('Survey Logged', editId ? 'Survey updated successfully.' : 'Survey report was saved to history database successfully!');
       router.push('/(tabs)/history');
     } catch (e) {
       console.warn(e);
-      Alert.alert('Database Error', 'Failed to save survey. Try again.');
+      showAlert('Database Error', 'Failed to save survey. Try again.');
     }
   };
 

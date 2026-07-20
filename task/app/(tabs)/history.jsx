@@ -6,6 +6,7 @@ import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useRouter } from 'expo-router';
 import { getSurveys, saveSurveys, EDIT_SURVEY_KEY, EDIT_SURVEY_ID_KEY } from '../../utils/storage';
+import { confirmAction, showAlert } from '../../utils/alert';
 
 export default function HistoryScreen() {
   const router = useRouter();
@@ -57,13 +58,12 @@ export default function HistoryScreen() {
 
   const confirmDelete = (id) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    Alert.alert(
+    confirmAction(
       'Delete Survey Report',
       'Are you sure you want to permanently delete this inspection report? This action cannot be reverted.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteSurvey(id) },
-      ]
+      () => deleteSurvey(id),
+      'Delete',
+      'destructive'
     );
   };
 
@@ -73,10 +73,10 @@ export default function HistoryScreen() {
       await saveSurveys(newList);
       setSurveys(newList);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Deleted', 'Inspection report deleted successfully.');
+      showAlert('Deleted', 'Inspection report deleted successfully.');
     } catch (e) {
       console.warn(e);
-      Alert.alert('Error', 'Unable to delete report.');
+      showAlert('Error', 'Unable to delete report.');
     }
   };
 

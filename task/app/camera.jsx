@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { confirmAction } from '../utils/alert';
 
 export default function CameraScreen() {
   const router = useRouter();
@@ -54,22 +55,17 @@ export default function CameraScreen() {
   };
 
   const deletePhoto = () => {
-    Alert.alert(
+    confirmAction(
       'Delete Photo',
       'Are you sure you want to delete this captured photo? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await AsyncStorage.removeItem('@last_photo');
-            await AsyncStorage.removeItem('@last_photo_time');
-            setPhotoUri(null);
-            setCaptureTime('');
-          },
-        },
-      ]
+      async () => {
+        await AsyncStorage.removeItem('@last_photo');
+        await AsyncStorage.removeItem('@last_photo_time');
+        setPhotoUri(null);
+        setCaptureTime('');
+      },
+      'Delete',
+      'destructive'
     );
   };
 
