@@ -9,6 +9,8 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const DRAFT_KEY = '@draft_survey';
 const LAST_PHOTO = '@last_photo';
+const EDIT_SURVEY_KEY = '@edit_survey';
+const EDIT_SURVEY_ID_KEY = '@editing_survey_id';
 
 export default function NewSurvey() {
   const router = useRouter();
@@ -18,6 +20,7 @@ export default function NewSurvey() {
   const [priority, setPriority] = useState('Medium');
   const [date, setDate] = useState('');
   const [attachedPhoto, setAttachedPhoto] = useState(null);
+  const [editingSurveyId, setEditingSurveyId] = useState(null);
 
   // New assignment fields
   const [contactPhone, setContactPhone] = useState('');
@@ -40,20 +43,65 @@ export default function NewSurvey() {
 
   const loadDraft = async () => {
     try {
-      const raw = await AsyncStorage.getItem(DRAFT_KEY);
-      if (raw) {
-        const d = JSON.parse(raw);
-        setSiteName(d.siteName || '');
-        setClientName(d.clientName || '');
-        setDescription(d.description || '');
-        setPriority(d.priority || 'Medium');
-        if (d.date) setDate(d.date);
-        setContactPhone(d.contactPhone || '');
-        setLocationCoords(d.locationCoords || '');
-        setNotes(d.notes || '');
+      const editRaw = await AsyncStorage.getItem(EDIT_SURVEY_KEY);
+      const editId = await AsyncStorage.getItem(EDIT_SURVEY_ID_KEY);
+      if (editRaw && editId) {
+        const item = JSON.parse(editRaw);
+        setSiteName(item.siteName || '');
+        setClientName(item.clientName || '');
+        setDescription(item.description || '');
+        setPriority(item.priority || 'Medium');
+        setDate(item.date || '');
+        setContactPhone(item.contactPhone || '');
+        setLocationCoords(item.locationCoords || '');
+        setNotes(item.notes || '');
+        setEditingSurveyId(editId);
+        const photo = item.photo || await AsyncStorage.getItem(LAST_PHOTO);
+        if (photo) setAttachedPhoto(photo);
+      } else {
+        setEditingSurveyId(null);
+        const raw = await AsyncStorage.getItem(DRAFT_KEY);
+        if (raw) {
+          const d = JSON.parse(raw);
+          setSiteName(d.siteName || '');
+          setClientName(d.clientName || '');
+          setDescription(d.description || '');
+          setPriority(d.priority || 'Medium');
+          if (d.date) setDate(d.date);
+          setContactPhone(d.contactPhone || '');
+          setLocationCoords(d.locationCoords || '');
+          setNotes(d.notes || '');
+        }
+        const photo = await AsyncStorage.getItem(LAST_PHOTO);
+        if (photo) setAttachedPhoto(photo);
       }
-      const photo = await AsyncStorage.getItem(LAST_PHOTO);
-      if (photo) setAttachedPhoto(photo);
+    } catch (e) {
+      console.warn(e);
+    }
+  };
+
+  const cancelEditing = async () => {
+    try {
+      await AsyncStorage.removeItem(EDIT_SURVEY_KEY);
+      await AsyncStorage.removeItem(EDIT_SURVEY_ID_KEY);
+      await AsyncStorage.removeItem(DRAFT_KEY);
+      await AsyncStorage.removeItem(LAST_PHOTO);
+      setSiteName('');
+      setClientName('');
+      setDescription('');
+      setPriority('Medium');
+      const today = new Date();
+      const day = String(today.getDate()).padStart(2, '0');
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const year = today.getFullYear();
+      setDate(`${day}/${month}/${year}`);
+      setContactPhone('');
+      setLocationCoords('');
+      setNotes('');
+      setAttachedPhoto(null);
+      setEditingSurveyId(null);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Alert.alert('Editing Cancelled', 'Form reset for new survey.');
     } catch (e) {
       console.warn(e);
     }
@@ -61,7 +109,9 @@ export default function NewSurvey() {
 
   useEffect(() => {
     // Load draft every time screen is focused
-    const unsub = router.addListener?.('focus', loadDraft);
+    const unsub = router.addListener?.('focus', () => {
+      loadDraft();
+    });
     loadDraft();
     return () => unsub?.();
   }, [router]);
@@ -89,6 +139,9 @@ export default function NewSurvey() {
     const draft = { siteName, clientName, description, priority, date, contactPhone, locationCoords, notes };
     try {
       await AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      if (editingSurveyId) {
+        await AsyncStorage.setItem(EDIT_SURVEY_ID_KEY, editingSurveyId);
+      }
       router.push('/preview');
     } catch (e) {
       console.warn(e);
@@ -154,8 +207,22 @@ export default function NewSurvey() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={styles.content}>
-      <Text style={[styles.title, { color: themeColors.text }]}>Create Field Survey</Text>
-      <Text style={[styles.subtitle, { color: themeColors.textMuted }]}>Perform safety inspections and log details</Text>
+      {editingSurveyId ? (
+        <View style={[styles.editingBanner, { backgroundColor: themeColors.primary + '12', borderColor: themeColors.primary }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.editingTitle, { color: themeColors.primary }]}>Editing Survey: {editingSurveyId}</Text>
+            <Text style={[styles.editingSub, { color: themeColors.textMuted }]}>Modifying existing inspection record</Text>
+          </View>
+          <TouchableOpacity onPress={cancelEditing} style={[styles.cancelEditBtn, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+            <Text style={[styles.cancelEditText, { color: themeColors.error }]}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          <Text style={[styles.title, { color: themeColors.text }]}>Create Field Survey</Text>
+          <Text style={[styles.subtitle, { color: themeColors.textMuted }]}>Perform safety inspections and log details</Text>
+        </>
+      )}
 
       {/* Site Name Input */}
       <View style={styles.formGroup}>
@@ -268,7 +335,7 @@ export default function NewSurvey() {
         {errors.date && <Text style={[styles.errorText, { color: themeColors.error }]}>{errors.date}</Text>}
       </View>
 
-      {/* NEW: Contact Phone Input with Autofill */}
+      {/* NEW: Client Contact Number Input with Autofill */}
       <View style={styles.formGroup}>
         <View style={styles.labelRow}>
           <Text style={[styles.label, { color: themeColors.text, marginBottom: 0 }]}>Client Contact Number</Text>
@@ -504,6 +571,33 @@ const styles = StyleSheet.create({
   submitBtnText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  editingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginBottom: 20,
+  },
+  editingTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  editingSub: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  cancelEditBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  cancelEditText: {
+    fontSize: 12,
     fontWeight: 'bold',
   },
 });

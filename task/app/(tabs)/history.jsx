@@ -7,6 +7,8 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useRouter } from 'expo-router';
 
 const STORAGE_KEY = '@surveys_v1';
+const EDIT_SURVEY_KEY = '@edit_survey';
+const EDIT_SURVEY_ID_KEY = '@editing_survey_id';
 
 export default function HistoryScreen() {
   const router = useRouter();
@@ -82,31 +84,40 @@ export default function HistoryScreen() {
     }
   };
 
-  const showReportDetails = (item) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    let reportText = `Site: ${item.siteName}\n`;
-    reportText += `Client: ${item.clientName}\n`;
-    reportText += `Date: ${item.date}\n`;
-    reportText += `Priority: ${item.priority}\n`;
-    if (item.locationCoords) reportText += `GPS: ${item.locationCoords}\n`;
-    if (item.contactPhone) reportText += `Contact: ${item.contactPhone}\n`;
-    reportText += `\nDescription: ${item.description}\n`;
-    if (item.notes) reportText += `\nNotes: ${item.notes}\n`;
+  const editSurvey = async (item) => {
+    try {
+      await AsyncStorage.setItem(EDIT_SURVEY_KEY, JSON.stringify(item));
+      await AsyncStorage.setItem(EDIT_SURVEY_ID_KEY, item.id);
+      await AsyncStorage.setItem('@draft_survey', JSON.stringify(item));
+      if (item.photo) {
+        await AsyncStorage.setItem('@last_photo', item.photo);
+      } else {
+        await AsyncStorage.removeItem('@last_photo');
+      }
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      router.push('/(tabs)/new-survey');
+    } catch (e) {
+      console.warn(e);
+      Alert.alert('Error', 'Unable to prepare survey for editing.');
+    }
+  };
 
-    Alert.alert(`Report ID: ${item.id}`, reportText, [
-      { text: 'Close', style: 'cancel' },
-      { text: 'View Document', onPress: () => {
-        // Cache this as draft so we can preview it in full page preview
-        AsyncStorage.setItem('@draft_survey', JSON.stringify(item))
-          .then(() => {
-            if (item.photo) {
-              AsyncStorage.setItem('@last_photo', item.photo);
-            }
-            router.push('/preview');
-          });
-      }}
-    ]);
+  const showReportDetails = async (item) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await AsyncStorage.setItem('@draft_survey', JSON.stringify(item));
+      if (item.photo) {
+        await AsyncStorage.setItem('@last_photo', item.photo);
+      } else {
+        await AsyncStorage.removeItem('@last_photo');
+      }
+      await AsyncStorage.removeItem(EDIT_SURVEY_ID_KEY);
+      await AsyncStorage.removeItem(EDIT_SURVEY_KEY);
+      router.push('/preview');
+    } catch (e) {
+      console.warn(e);
+      Alert.alert('Error', 'Unable to open survey details.');
+    }
   };
 
   const getPriorityColor = (p) => {
@@ -237,6 +248,12 @@ export default function HistoryScreen() {
                         style={[styles.actionBtn, { backgroundColor: themeColors.primary + '12' }]}
                       >
                         <Text style={[styles.actionBtnText, { color: themeColors.primary }]}>View</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => editSurvey(item)}
+                        style={[styles.actionBtn, { backgroundColor: themeColors.medium + '12' }]}
+                      >
+                        <Text style={[styles.actionBtnText, { color: themeColors.medium }]}>Edit</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => confirmDelete(item.id)}

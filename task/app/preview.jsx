@@ -9,6 +9,8 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 const STORAGE_KEY = '@surveys_v1';
 const DRAFT_KEY = '@draft_survey';
 const LAST_PHOTO = '@last_photo';
+const EDIT_SURVEY_ID_KEY = '@editing_survey_id';
+const EDIT_SURVEY_KEY = '@edit_survey';
 
 export default function PreviewScreen() {
   const router = useRouter();
@@ -43,14 +45,23 @@ export default function PreviewScreen() {
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
       const list = raw ? JSON.parse(raw) : [];
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([survey, ...list]));
+      const editId = await AsyncStorage.getItem(EDIT_SURVEY_ID_KEY);
+      if (editId) {
+        const updated = list.map(item => item.id === editId ? { ...item, ...draft, photo, updatedAt: new Date().toISOString() } : item);
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        survey.id = editId;
+      } else {
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([survey, ...list]));
+      }
       
       // Clear caches
       await AsyncStorage.removeItem(DRAFT_KEY);
       await AsyncStorage.removeItem(LAST_PHOTO);
+      await AsyncStorage.removeItem(EDIT_SURVEY_ID_KEY);
+      await AsyncStorage.removeItem(EDIT_SURVEY_KEY);
       
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Survey Logged', 'Survey report was saved to history database successfully!');
+      Alert.alert('Survey Logged', editId ? 'Survey updated successfully.' : 'Survey report was saved to history database successfully!');
       router.push('/(tabs)/history');
     } catch (e) {
       console.warn(e);
