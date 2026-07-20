@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, useColorScheme } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { showAlert } from '../../utils/alert';
 
 const DRAFT_KEY = '@draft_survey';
 const LAST_PHOTO = '@last_photo';
@@ -101,20 +102,17 @@ export default function NewSurvey() {
       setAttachedPhoto(null);
       setEditingSurveyId(null);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      Alert.alert('Editing Cancelled', 'Form reset for new survey.');
+      showAlert('Editing Cancelled', 'Form reset for new survey.');
     } catch (e) {
       console.warn(e);
     }
   };
 
-  useEffect(() => {
-    // Load draft every time screen is focused
-    const unsub = router.addListener?.('focus', () => {
+  useFocusEffect(
+    useCallback(() => {
       loadDraft();
-    });
-    loadDraft();
-    return () => unsub?.();
-  }, [router]);
+    }, [])
+  );
 
   const validateForm = () => {
     let tempErrors = {};
@@ -132,7 +130,7 @@ export default function NewSurvey() {
 
   const saveDraftAndPreview = async () => {
     if (!validateForm()) {
-      Alert.alert('Validation Error', 'Please complete all required fields correctly.');
+      showAlert('Validation Error', 'Please complete all required fields correctly.');
       return;
     }
 
@@ -145,7 +143,7 @@ export default function NewSurvey() {
       router.push('/preview');
     } catch (e) {
       console.warn(e);
-      Alert.alert('Error', 'Unable to cache survey draft.');
+      showAlert('Error', 'Unable to cache survey draft.');
     }
   };
 
@@ -157,9 +155,9 @@ export default function NewSurvey() {
       if (cachedPhone) {
         setContactPhone(cachedPhone);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Alert.alert('Autofilled', `Loaded contact number: ${cachedName ? cachedName + ' (' + cachedPhone + ')' : cachedPhone}`);
+        showAlert('Autofilled', `Loaded contact number: ${cachedName ? cachedName + ' (' + cachedPhone + ')' : cachedPhone}`);
       } else {
-        Alert.alert('No Cache', 'No recently copied contact found. Please copy a number in the Contacts module first.');
+        showAlert('No Cache', 'No recently copied contact found. Please copy a number in the Contacts module first.');
       }
     } catch (e) {
       console.warn(e);
@@ -172,9 +170,9 @@ export default function NewSurvey() {
       if (cachedLoc) {
         setLocationCoords(cachedLoc);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Alert.alert('Autofilled', `Loaded GPS coordinates: ${cachedLoc}`);
+        showAlert('Autofilled', `Loaded GPS coordinates: ${cachedLoc}`);
       } else {
-        Alert.alert('No Cache', 'No recently fetched location found. Please capture GPS in the Location module first.');
+        showAlert('No Cache', 'No recently fetched location found. Please capture GPS in the Location module first.');
       }
     } catch (e) {
       console.warn(e);
@@ -187,9 +185,9 @@ export default function NewSurvey() {
       if (clipboardContent) {
         setNotes(clipboardContent);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Alert.alert('Autofilled', 'Notes pasted from system clipboard.');
+        showAlert('Autofilled', 'Notes pasted from system clipboard.');
       } else {
-        Alert.alert('Empty Clipboard', 'System clipboard buffer is currently empty.');
+        showAlert('Empty Clipboard', 'System clipboard buffer is currently empty.');
       }
     } catch (e) {
       console.warn(e);

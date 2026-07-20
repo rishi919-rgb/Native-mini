@@ -62,7 +62,7 @@ export default function PreviewScreen() {
       
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showAlert('Survey Logged', editId ? 'Survey updated successfully.' : 'Survey report was saved to history database successfully!');
-      router.push('/(tabs)/history');
+      router.replace('/(tabs)/history');
     } catch (e) {
       console.warn(e);
       showAlert('Database Error', 'Failed to save survey. Try again.');

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View, Pressable, useColorScheme, ActivityIndicator } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -23,12 +23,11 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => {
-    // Focus listener to reload data when navigating back to Dashboard
-    const unsub = router.addListener?.('focus', loadData);
-    loadData();
-    return () => unsub?.();
-  }, [router]);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   // Determine dynamic greeting
   const getGreeting = () => {

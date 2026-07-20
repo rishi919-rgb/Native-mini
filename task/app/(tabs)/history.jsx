@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, RefreshControl, StyleSheet, Text, TextInput, View, TouchableOpacity, Image, useColorScheme, ActivityIndicator } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, Text, TextInput, View, TouchableOpacity, Image, useColorScheme, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { getSurveys, saveSurveys, EDIT_SURVEY_KEY, EDIT_SURVEY_ID_KEY } from '../../utils/storage';
 import { confirmAction, showAlert } from '../../utils/alert';
 
@@ -31,11 +31,11 @@ export default function HistoryScreen() {
     }
   };
 
-  useEffect(() => {
-    const unsub = router.addListener?.('focus', load);
-    load();
-    return () => unsub?.();
-  }, [router]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -94,7 +94,7 @@ export default function HistoryScreen() {
       router.push('/(tabs)/new-survey');
     } catch (e) {
       console.warn(e);
-      Alert.alert('Error', 'Unable to prepare survey for editing.');
+      showAlert('Error', 'Unable to prepare survey for editing.');
     }
   };
 
@@ -112,7 +112,7 @@ export default function HistoryScreen() {
       router.push('/preview');
     } catch (e) {
       console.warn(e);
-      Alert.alert('Error', 'Unable to open survey details.');
+      showAlert('Error', 'Unable to open survey details.');
     }
   };
 
