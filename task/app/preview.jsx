@@ -5,12 +5,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-
-const STORAGE_KEY = '@surveys_v1';
-const DRAFT_KEY = '@draft_survey';
-const LAST_PHOTO = '@last_photo';
-const EDIT_SURVEY_ID_KEY = '@editing_survey_id';
-const EDIT_SURVEY_KEY = '@edit_survey';
+import { getSurveys, saveSurveys, DRAFT_KEY, LAST_PHOTO, EDIT_SURVEY_ID_KEY, EDIT_SURVEY_KEY } from '../utils/storage';
 
 export default function PreviewScreen() {
   const router = useRouter();
@@ -35,23 +30,27 @@ export default function PreviewScreen() {
 
   const submit = async () => {
     if (!draft) return;
+    const newId = `SVY-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
     const survey = { 
       ...draft, 
-      id: `SVY-${Date.now().toString().slice(-6)}`, 
+      id: newId, 
       createdAt: new Date().toISOString(), 
       photo 
     };
     
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      const list = raw ? JSON.parse(raw) : [];
+      const list = await getSurveys();
       const editId = await AsyncStorage.getItem(EDIT_SURVEY_ID_KEY);
+      let updatedList;
       if (editId) {
-        const updated = list.map(item => item.id === editId ? { ...item, ...draft, photo, updatedAt: new Date().toISOString() } : item);
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-        survey.id = editId;
+        updatedList = list.map(item => item.id === editId ? { ...item, ...draft, photo, updatedAt: new Date().toISOString() } : item);
       } else {
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([survey, ...list]));
+        updatedList = [survey, ...list];
+      }
+      
+      const success = await saveSurveys(updatedList);
+      if (!success) {
+        Alert.alert('Storage Warning', 'Report saved, but storage space is low.');
       }
       
       // Clear caches

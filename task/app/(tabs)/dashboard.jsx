@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View, Pressable, useColorScheme, ActivityIndicator } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-
-const STORAGE_KEY = '@surveys_v1';
+import { getSurveys } from '../../utils/storage';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -16,8 +14,7 @@ export default function Dashboard() {
 
   const loadData = async () => {
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      const list = raw ? JSON.parse(raw) : [];
+      const list = await getSurveys();
       setSurveys(list);
     } catch (e) {
       console.warn(e);

@@ -4,8 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-
-const STORAGE_KEY = '@surveys_v1';
+import { getSurveys, saveSurveys, STORAGE_KEY } from '../utils/storage';
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -14,26 +13,17 @@ export default function SettingsScreen() {
   const clearDatabase = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
-      'Wipe Local Database',
-      'This will delete all saved inspection survey reports. This action cannot be undone.',
+      'Wipe Database',
+      'Are you sure you want to delete all stored survey inspections? This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Clear All',
+          text: 'Wipe All',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await AsyncStorage.removeItem(STORAGE_KEY);
-              await AsyncStorage.removeItem('@draft_survey');
-              await AsyncStorage.removeItem('@last_photo');
-              await AsyncStorage.removeItem('@last_location');
-              await AsyncStorage.removeItem('@last_contact');
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Alert.alert('Database Wiped', 'All field inspection records have been deleted.');
-            } catch (e) {
-              console.warn(e);
-              Alert.alert('Error', 'Unable to reset database storage.');
-            }
+            await AsyncStorage.removeItem(STORAGE_KEY);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert('Database Cleared', 'All local inspection reports have been erased.');
           },
         },
       ]
@@ -42,9 +32,10 @@ export default function SettingsScreen() {
 
   const loadMockSurveys = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const timestamp = Date.now();
     const mockData = [
       {
-        id: 'SVY-784012',
+        id: `SVY-784012-${timestamp}`,
         siteName: 'Terminal 2 Expansion (Aerodrome)',
         clientName: 'Mumbai Airport Authority',
         description: 'Safety check on concrete girder support pillars. Minor hairline fractures detected on girder G-14. No critical danger but recommends re-examination in 30 days.',
@@ -56,7 +47,7 @@ export default function SettingsScreen() {
         photo: null
       },
       {
-        id: 'SVY-481920',
+        id: `SVY-481920-${timestamp + 1}`,
         siteName: 'Seaside Bridge Corridor (Pillar 24)',
         clientName: 'MMRDA Infrastructure',
         description: 'Critical warning! Corrosion detected on main suspension anchor bolt caps. Needs immediate reinforcement to prevent load structural failures.',
@@ -68,7 +59,7 @@ export default function SettingsScreen() {
         photo: null
       },
       {
-        id: 'SVY-110482',
+        id: `SVY-110482-${timestamp + 2}`,
         siteName: 'Greenfield Eco Office Park',
         clientName: 'Godrej Properties',
         description: 'Foundation pouring and piling work completed. Checked reinforcement rebar cage sizing. Everything conforms with approved blueprints and standards.',
@@ -82,10 +73,8 @@ export default function SettingsScreen() {
     ];
 
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      const existing = raw ? JSON.parse(raw) : [];
-      // Prepends mock items
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([...mockData, ...existing]));
+      const existing = await getSurveys();
+      await saveSurveys([...mockData, ...existing]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Mock Data Injected', 'Injected 3 realistic field inspection records. View them in the History tab!');
     } catch (e) {

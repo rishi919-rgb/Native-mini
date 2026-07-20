@@ -5,10 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useRouter } from 'expo-router';
-
-const STORAGE_KEY = '@surveys_v1';
-const EDIT_SURVEY_KEY = '@edit_survey';
-const EDIT_SURVEY_ID_KEY = '@editing_survey_id';
+import { getSurveys, saveSurveys, EDIT_SURVEY_KEY, EDIT_SURVEY_ID_KEY } from '../../utils/storage';
 
 export default function HistoryScreen() {
   const router = useRouter();
@@ -23,8 +20,7 @@ export default function HistoryScreen() {
 
   const load = async () => {
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      const list = raw ? JSON.parse(raw) : [];
+      const list = await getSurveys();
       setSurveys(list);
       setFiltered(list);
     } catch (e) {
@@ -74,7 +70,7 @@ export default function HistoryScreen() {
   const deleteSurvey = async (id) => {
     try {
       const newList = surveys.filter(s => s.id !== id);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
+      await saveSurveys(newList);
       setSurveys(newList);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Deleted', 'Inspection report deleted successfully.');
@@ -196,7 +192,7 @@ export default function HistoryScreen() {
       {/* Surveys List */}
       <FlatList
         data={filtered}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => (item && item.id) ? `${item.id}-${index}` : `survey-${index}`}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={themeColors.primary} />
